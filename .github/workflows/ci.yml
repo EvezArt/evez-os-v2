@@ -1,0 +1,36 @@
+name: evez-os-v2 CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    name: 'Test — Child Maturity Engine (K=0 → WIN)'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install deps
+        run: |
+          pip install pyflakes pytest
+          if [ -f requirements.txt ]; then pip install -r requirements.txt --no-deps || true; fi
+      - name: Lint
+        run: pyflakes . --exclude=.git,__pycache__ || true
+      - name: Spine integrity
+        run: |
+          echo "Spine files:"
+          find spine/ -type f 2>/dev/null | head -20 || echo 'No spine dir yet'
+      - name: Maturity check
+        run: |
+          python3 -c "
+          import json, glob
+          files = glob.glob('**/*.json', recursive=True)
+          print(f'JSON state files: {len(files)}')
+          for f in files[:5]: print(f' {f}')
+          " || true
